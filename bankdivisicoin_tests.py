@@ -19,7 +19,7 @@ def test_bank_balances():
     ]
     tx_id = uuid.uuid4()
     tx_outs = [
-        TxOut(tx_id=tx_id, index=0, amount=10, public_key=bob_public_key), 
+        TxOut(tx_id=tx_id, index=0, amount=10, public_key=bob_public_key),
         TxOut(tx_id=tx_id, index=1, amount=990, public_key=alice_public_key),
     ]
     alice_to_bob = Tx(id=tx_id, tx_ins=tx_ins, tx_outs=tx_outs)
