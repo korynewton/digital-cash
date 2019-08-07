@@ -9,6 +9,7 @@ alice_private_key = SigningKey.generate(curve=SECP256k1)
 bob_public_key = bob_private_key.get_verifying_key()
 alice_public_key = alice_private_key.get_verifying_key()
 
+
 def test_valid_transfers():
     # Issue a coin and transfer it twice
 
