@@ -20,8 +20,8 @@ import socket
 import sys
 from copy import deepcopy
 from ecdsa import SigningKey, SECP256k1
-from utils import serialize, deserialize
-from identities import user_public_key
+from utils import serialize, deserialize, prepare_simple_tx
+from identities import user_public_key, user_private_key
 from docopt import docopt
 
 
@@ -165,12 +165,24 @@ class TCPHandler(socketserver.BaseRequestHandler):
 
         if command == "ping":
             self.respond("ping", "")
+
         elif command == "balance":
             public_key = message["data"]
-            balance = bank.fetch_balance(public_key)
-            self.respond("balance-response", balance)
-        elif commmand == "tx":
-            ```
+            utxo = bank.fetch_balance(public_key)
+            self.respond("balance-response", utxo)
+
+        elif command == "utxo":
+            public_key = message["data"]
+            balance = bank.fetch_utxo(public_key)
+            self.respond("utxo-response", balance)
+
+        elif command == "tx":
+            tx = message["data"]
+            try:
+                bank.handle_tx(tx)
+                self.respond("tx-response", data="accepted")
+            except:
+                self.respond("tx-response", data="rejected")
 
 
 def serve():
@@ -189,6 +201,8 @@ def send_message(command, data):
     message = deserialize(message_data)
     print(f"data recieved: {message}")
 
+    return message
+
 
 def main(args):
     if args["serve"]:
@@ -201,8 +215,24 @@ def main(args):
         name = args["<name>"]
         public_key = user_public_key(name)
         send_message("balance", public_key)
-    elif arg['tx']:
-        ```
+    elif args['tx']:
+        #   mybanknetcoin.py tx <from> <to> <amount>
+        sender_private_key = user_private_key(args["<from>"])
+        sender_public_key = sender_private_key.get_verifying_key()
+        recipient_public_key = user_public_key(args["<to>"])
+        amount = int(args["<amount>"])
+
+        # fetch sender utxos
+        utxo_response = send_message("utxo", sender_public_key)
+        utxo = utxo_response["data"]
+
+        # prepare the transaction
+        tx = prepare_simple_tx(utxo, sender_private_key,
+                               recipient_public_key, amount)
+
+        # send transaction to the bank
+        response = send_message("tx", tx)
+        print(response)
     else:
         print("invalid command ")
 
