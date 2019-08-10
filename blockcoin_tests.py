@@ -1,6 +1,9 @@
-import pytest, time, uuid, ecdsa
+import pytest
+import time
+import uuid
+import ecdsa
 import identities
-from blockcoin import *
+from myblockcoin import *
 
 
 def test_blocks():
@@ -14,10 +17,11 @@ def test_blocks():
 
     # Wrong bank signs
     block = Block(txns=[])
-    wrong_private_key = identities.bank_private_key(1000) 
+    wrong_private_key = identities.bank_private_key(1000)
     block.sign(wrong_private_key)
     with pytest.raises(ecdsa.keys.BadSignatureError):
         bank.handle_block(block)
+
 
 def test_bad_tx():
     bank = Bank(id=0, private_key=identities.bank_private_key(0))
@@ -35,6 +39,7 @@ def test_bad_tx():
 
     with pytest.raises(ecdsa.keys.BadSignatureError):
         bank.handle_tx(tx)
+
 
 def test_airdrop():
     bank = Bank(id=0, private_key=identities.bank_private_key(0))

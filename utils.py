@@ -1,15 +1,20 @@
-import pickle, uuid
+import pickle
+import uuid
+
 
 def serialize(coin):
     return pickle.dumps(coin)
 
+
 def deserialize(serialized):
     return pickle.loads(serialized)
+
 
 def to_disk(coin, filename):
     serialized = serialize(coin)
     with open(filename, "wb") as f:
         f.write(serialized)
+
 
 def from_disk(filename):
     with open(filename, "rb") as f:
@@ -22,13 +27,15 @@ def from_disk(filename):
 ##################################################
 
 def prepare_simple_tx(utxos, sender_private_key, recipient_public_key, amount):
+    from myblockcoin import Tx, TxIn, TxOut
     sender_public_key = sender_private_key.get_verifying_key()
 
     # Construct tx.tx_outs
     tx_ins = []
     tx_in_sum = 0
     for tx_out in utxos:
-        tx_ins.append(TxIn(tx_id=tx_out.tx_id, index=tx_out.index, signature=None))
+        tx_ins.append(
+            TxIn(tx_id=tx_out.tx_id, index=tx_out.index, signature=None))
         tx_in_sum += tx_out.amount
         if tx_in_sum > amount:
             break
@@ -40,8 +47,10 @@ def prepare_simple_tx(utxos, sender_private_key, recipient_public_key, amount):
     tx_id = uuid.uuid4()
     change = tx_in_sum - amount
     tx_outs = [
-        TxOut(tx_id=tx_id, index=0, amount=amount, public_key=recipient_public_key), 
-        TxOut(tx_id=tx_id, index=1, amount=change, public_key=sender_public_key),
+        TxOut(tx_id=tx_id, index=0, amount=amount,
+              public_key=recipient_public_key),
+        TxOut(tx_id=tx_id, index=1, amount=change,
+              public_key=sender_public_key),
     ]
 
     # Construct tx and sign inputs
