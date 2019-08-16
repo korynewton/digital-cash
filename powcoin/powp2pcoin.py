@@ -463,11 +463,11 @@ def lookup_public_key(name):
 
 def main(args):
     if args["serve"]:
-        threading.current_thread().name = "main"
+        # threading.current_thread().name = "main"
         name = os.environ["NAME"]
 
-        duration = 10 * ["node0", "node1", "node2"].index(name)
-        time.sleep(duration)
+        # duration = 10 * ["node0", "node1", "node2"].index(name)
+        # time.sleep(duration)
 
         global node
         node = Node(address=(name, PORT))
