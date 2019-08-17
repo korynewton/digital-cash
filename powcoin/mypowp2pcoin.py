@@ -24,6 +24,7 @@ PORT = 10000
 BLOCK_SUBSIDY = 50
 node = None
 GET_BLOCKS_CHUNK = 10
+lock = threading.Lock()
 
 logging.basicConfig(level="INFO", format='%(threadName)-6s | %(message)s')
 logger = logging.getLogger(__name__)
@@ -283,7 +284,8 @@ def mine_forever(public_key):
         if mined_block:
             logger.info("")
             logger.info("Mined a block")
-            node.handle_block(mined_block)
+            with lock:
+                node.handle_block(mined_block)
 
 def mine_genesis_block(public_key):
     global node
@@ -399,10 +401,11 @@ class TCPHandler(socketserver.BaseRequestHandler):
         elif command == "blocks":
             for block in data:
                 try:
-                    node.handle_block(block)
+                    with lock:
+                        node.handle_block(block)
                     mining_interrupt.set()
                 except:
-                    logger.info(f"Rejected block {block.id}")
+                    logger.info(f"Rejected block")
 
             if len(data) == GET_BLOCKS_CHUNK:
                 node.sync()
@@ -434,7 +437,7 @@ def send_message(address, command, data, response=False):
         s.connect(address)
         s.sendall(message)
         if response:
-            return deserialize(s.recv(5000))
+            return read_message(s)
 
 
 #######
