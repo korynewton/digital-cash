@@ -1,5 +1,5 @@
 """
-POWCoin
+mybitcoin
 
 Usage:
   powcoin.py serve
@@ -25,8 +25,7 @@ mining_interrupt = threading.Event()
 
 SATOSHIS_PER_COIN = 100_000_000
 GET_BLOCKS_CHUNK = 10
-BLOCK_SUBSIDY=50
-HALVENING_INTERVAL = 60 * 24          #daily (assuming 1 min blocks)
+HALVING_INTERVAL = 60 * 24          #daily (assuming 1 min blocks)
 
 INITIAL_DIFFICULTY_BITS = 17
 BLOCK_TIME_IN_SECS = 1
@@ -120,7 +119,7 @@ class Block:
 
     @property
     def target(self):
-        return 2 ** (256 - INITIAL_DIFFICULTY_BITS)
+        return 2 ** (256 - self.bits)
 
     def __eq__(self, other):
         return self.id == other.id
@@ -248,7 +247,7 @@ class Node:
 
 
             #Check difficulty adjustment
-            assert block.bits == self.get_next_bits(block.prev_id) 
+            assert block.bits == self.get_next_bits(block.prev_id, log=True) 
 
             # Validate coinbase separately
             self.validate_coinbase(block)
@@ -344,8 +343,8 @@ class Node:
         for tx in block.txns:
             self.connect_tx(tx)
     def get_block_subsidy(self):
-        halvenings = len(self.blocks) // HALVENING_INTERVAL
-        return (50 * SATOSHIS_PER_COIN) // (2**halvenings)
+        halvings = len(self.blocks) // HALVING_INTERVAL
+        return (50 * SATOSHIS_PER_COIN) // (2**halvings)
 
     def calculate_fees(self,txns):
         fees = 0
@@ -357,7 +356,7 @@ class Node:
                 outputs += tx_out.amount
             fees += inputs - outputs
         return fees
-    def get_next_bits(self, block_id):
+    def get_next_bits(self, block_id, log=False):
         # Find the block
         height = [block.id for block in self.blocks].index(block_id)
         block = self.blocks[height]
@@ -374,7 +373,7 @@ class Node:
         # Calculate how long this difficulty period lasted
         one_period_ago_index = max(height - BLOCKS_PER_DIFFICULTY_PERIOD,0)
         one_period_ago_block = self.blocks[one_period_ago_index]
-        period_duration = block.timestamp - one_period_ago_block.timestamp 
+        period_duration = block.timestamp - one_period_ago_block.timestamp
 
         # Calculate next bits
         if period_duration <= DIFFICULTY_PERIOD_IN_SECS:
@@ -382,14 +381,15 @@ class Node:
         else:
             next_bits = block.bits - 1
 
-        # Log some information
-        logger.info(
-            "(difficulty adjustment) "
-            f"period={next_block_period} "
-            f"target={DIFFICULTY_PERIOD_IN_SECS} "
-            f"duration={period_duration} "
-            f"bits={block.bits}->{next_bits}"
-        )
+        if log:
+            # Log some information
+            logger.info(
+                "(difficulty adjustment) "
+                f"period={next_block_period} "
+                f"target={DIFFICULTY_PERIOD_IN_SECS} "
+                f"duration={period_duration} "
+                f"bits={block.bits}->{next_bits}"
+            )
 
         return next_bits
 
